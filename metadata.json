@@ -1,0 +1,5 @@
+{
+  "name": "M&E Professional Chatbot",
+  "description": "A modern, responsive React-based web frontend for a professional M&E company chatbot application, featuring a dual-chat system, document summarization, and a simple user login.",
+  "requestFramePermissions": []
+}

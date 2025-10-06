@@ -1,6 +1,5 @@
-
 const N8N_GLOBAL_CHAT_URL = 'https://theintellect.app.n8n.cloud/webhook/ae7687bc-ad83-41c5-b8b7-6ce80cf45fee/chat';
-const N8N_SUMMARIZER_URL = 'https://[YOUR_N8N_WEBHOOK_URL]/summarize'; // Placeholder for the summarization webhook
+const N8N_SUMMARIZER_URL = 'https://theintellect.app.n8n.cloud/webhook-test/pdf-summariser';
 
 export const generateGlobalResponse = async (prompt: string, sessionId: string, userName: string): Promise<string> => {
     try {
@@ -50,36 +49,94 @@ export const generateGlobalResponse = async (prompt: string, sessionId: string, 
     }
 };
 
-export const summarizeDocument = async (fileContent: string): Promise<string> => {
+const formatSummary = (responseData: any): string => {
+    if (!Array.isArray(responseData) || responseData.length === 0 || !responseData[0]?.data) {
+        return `Received an unexpected response format. Raw output: ${JSON.stringify(responseData, null, 2)}`;
+    }
+
+    const summaryData = responseData[0].data;
+    const parts: string[] = [];
+
+    const findPart = (key: string) => summaryData.find((item: any) => item.output && item.output[key]);
+
+    const mainThemePart = findPart('main_theme');
+    if (mainThemePart) {
+        parts.push('## Main Theme');
+        parts.push(mainThemePart.output.main_theme);
+    }
+
+    const docSummaryPart = findPart('document_summary');
+    if (docSummaryPart && Array.isArray(docSummaryPart.output.document_summary)) {
+        parts.push('\n## Document Summary');
+        docSummaryPart.output.document_summary.forEach((section: any) => {
+            parts.push(`\n### ${section.section_title}`);
+            parts.push(section.content);
+        });
+    }
+    
+    const takeawaysPart = findPart('key_takeaways');
+    if (takeawaysPart && Array.isArray(takeawaysPart.output.key_takeaways)) {
+        parts.push('\n## Key Takeaways');
+        takeawaysPart.output.key_takeaways.forEach((item: any) => {
+            parts.push(`- **${item.point}:** ${item.context}`);
+        });
+    }
+
+    const gapsPart = findPart('gaps_and_limitations');
+    if (gapsPart && Array.isArray(gapsPart.output.gaps_and_limitations)) {
+        parts.push('\n## Gaps & Limitations');
+        gapsPart.output.gaps_and_limitations.forEach((item: any) => {
+            parts.push(`- **${item.issue}:** ${item.reason}`);
+        });
+    }
+
+    const questionsPart = findPart('follow_up_questions');
+    if (questionsPart && Array.isArray(questionsPart.output.follow_up_questions)) {
+        parts.push('\n## Follow-up Questions');
+        questionsPart.output.follow_up_questions.forEach((q: string) => {
+            parts.push(`- ${q}`);
+        });
+    }
+
+    if (parts.length === 0) {
+        return "Could not extract a valid summary from the response. The format might have changed.";
+    }
+
+    return parts.join('\n\n');
+};
+
+export const summarizeDocument = async (file: File): Promise<string> => {
     if (N8N_SUMMARIZER_URL.includes('[YOUR_N8N_WEBHOOK_URL]')) {
          return "Developer Note: The document summarizer is not configured. Please replace the placeholder URL in `services/geminiService.ts` with your actual backend endpoint. This backend service should securely call the Gemini API to perform the summarization.";
     }
 
     try {
+        const formData = new FormData();
+        // The key 'file' is a common convention. The n8n workflow will need to look for this key.
+        formData.append('file', file, file.name);
+        
         const response = await fetch(N8N_SUMMARIZER_URL, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ documentContent: fileContent }),
+            // When using FormData, the browser automatically sets the Content-Type to multipart/form-data
+            // with the correct boundary, so it should not be set manually.
+            body: formData,
+            cache: 'no-cache',
         });
 
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+             const errorText = await response.text();
+             throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
         }
 
         const responseData = await response.json();
-        
-        // Assuming the backend returns a JSON with a 'summary' key, but checking others for flexibility.
-        const summary = responseData.summary || responseData.text || responseData.output;
-        if (summary && typeof summary === 'string') {
-            return summary;
-        }
-        return "Failed to get a valid summary from the server. Unexpected response format.";
+        return formatSummary(responseData);
 
     } catch (error) {
         console.error("Error calling summarizer service:", error);
-        return "Sorry, I couldn't summarize the document. An error occurred while contacting the summarization service.";
+        if (error instanceof TypeError && error.message === 'Failed to fetch') {
+            return "Sorry, I couldn't summarize the document. A network error occurred. This is often due to a CORS policy on the server. Please ensure the n8n webhook is configured to accept file uploads from this web app's domain.";
+        }
+        return `Sorry, I couldn't summarize the document. An error occurred: ${error instanceof Error ? error.message : String(error)}`;
     }
 };
 

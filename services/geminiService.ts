@@ -1,5 +1,5 @@
 const N8N_GLOBAL_CHAT_URL = 'https://theintellect.app.n8n.cloud/webhook/ae7687bc-ad83-41c5-b8b7-6ce80cf45fee/chat';
-const N8N_SUMMARIZER_URL = 'https://theintellect.app.n8n.cloud/webhook-test/pdf-summariser';
+const N8N_SUMMARIZER_URL = 'https://theintellect.app.n8n.cloud/webhook/pdf-summariser';
 
 export const generateGlobalResponse = async (prompt: string, sessionId: string, userName: string): Promise<string> => {
     try {

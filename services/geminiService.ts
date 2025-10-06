@@ -50,15 +50,15 @@ export const generateGlobalResponse = async (prompt: string, sessionId: string, 
 };
 
 const formatSummary = (responseData: any): string => {
-    if (!Array.isArray(responseData) || responseData.length === 0 || !responseData[0]?.data) {
+    if (!responseData || !Array.isArray(responseData.data)) {
         return `Received an unexpected response format. Raw output: ${JSON.stringify(responseData, null, 2)}`;
     }
 
-    const summaryData = responseData[0].data;
+    const summaryData = responseData.data;
     const parts: string[] = [];
 
     const findPart = (key: string) => summaryData.find((item: any) => item.output && item.output[key]);
-
+    
     const mainThemePart = findPart('main_theme');
     if (mainThemePart) {
         parts.push('## Main Theme');
@@ -95,6 +95,22 @@ const formatSummary = (responseData: any): string => {
         parts.push('\n## Follow-up Questions');
         questionsPart.output.follow_up_questions.forEach((q: string) => {
             parts.push(`- ${q}`);
+        });
+    }
+    
+    const terminologyPart = findPart('terminology_to_clarify');
+    if (terminologyPart && Array.isArray(terminologyPart.output.terminology_to_clarify)) {
+        parts.push('\n## Terminology');
+        terminologyPart.output.terminology_to_clarify.forEach((item: any) => {
+            parts.push(`- **${item.term}:** ${item.explanation}`);
+        });
+    }
+    
+    const structurePart = findPart('structural_observations');
+    if (structurePart && Array.isArray(structurePart.output.structural_observations)) {
+        parts.push('\n## Document Structure');
+        structurePart.output.structural_observations.forEach((item: string) => {
+            parts.push(`- ${item}`);
         });
     }
 

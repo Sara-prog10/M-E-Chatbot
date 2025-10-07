@@ -15,7 +15,7 @@ import { getPrompts, savePrompt as savePromptToFirebase, updatePrompt as updateP
 import { v4 as uuidv4 } from 'uuid';
 
 // --- Configuration ---
-const CLIENT_NAME = "M&E";
+const CLIENT_NAME = "SmartFM";
 const API_BASE = "https://theintellect.app.n8n.cloud";
 
 // --- Main App Component ---
@@ -130,9 +130,9 @@ const App: React.FC = () => {
         // IMPORTANT: This is an insecure, client-side authentication for demonstration purposes only.
         // In a real application, this logic MUST be handled by a secure backend authentication service.
         let user: User | null = null;
-        if (username === 'User1' && password === 'User1@megpt') {
+        if (username === 'User1' && password === 'User1@smartfmgpt') {
             user = { id: 'user1', username: 'User1' };
-        } else if (username === 'User2' && password === 'User2@megpt') {
+        } else if (username === 'User2' && password === 'User2@smartfmgpt') {
             user = { id: 'user2', username: 'User2' };
         }
 

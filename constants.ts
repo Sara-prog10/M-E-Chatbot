@@ -33,7 +33,7 @@ export const RECOMMENDED_PROMPTS: Prompt[] = [
   {
     title: 'Extract deliverables',
     description: 'Extract deliverables and acceptance criteria from this document.',
-    author: 'M&E-GPT',
+    author: 'SmartFM-GPT',
     authorId: 'system',
     tag: 'PROJECTS',
     promptText: 'From the attached document, please extract a list of all project deliverables and their corresponding acceptance criteria. Present this in a table format.',
@@ -42,7 +42,7 @@ export const RECOMMENDED_PROMPTS: Prompt[] = [
   {
     title: 'Generate RFI questions',
     description: 'Produce prioritized RFI questions for tender clarifications.',
-    author: 'M&E-GPT',
+    author: 'SmartFM-GPT',
     authorId: 'system',
     tag: 'TENDERS',
     promptText: 'After reviewing the attached tender document, generate a list of prioritized Request for Information (RFI) questions to seek clarification from the client. Group them by urgency.',
@@ -51,7 +51,7 @@ export const RECOMMENDED_PROMPTS: Prompt[] = [
   {
     title: 'Create site briefing',
     description: '200-word site briefing for operations team.',
-    author: 'M&E-GPT',
+    author: 'SmartFM-GPT',
     authorId: 'system',
     tag: 'OPERATIONS',
     promptText: 'Using the information in the attached project summary, create a 200-word site briefing for the operations team. Include key objectives, safety warnings, and primary points of contact.',

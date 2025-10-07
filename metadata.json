@@ -1,0 +1,5 @@
+{
+  "name": "SmartFM-GPT",
+  "description": "A responsive single-page React application for enterprise chat, powered by a custom backend. Features include document uploads, source-cited answers, and saved prompts.",
+  "requestFramePermissions": []
+}

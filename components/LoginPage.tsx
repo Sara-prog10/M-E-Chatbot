@@ -22,7 +22,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
         <div className="flex items-center justify-center h-screen bg-slate-100 dark:bg-slate-900">
             <div className="w-full max-w-md p-8 space-y-8 bg-white dark:bg-slate-800 rounded-lg shadow-lg">
                 <div className="text-center">
-                    <h1 className="text-3xl font-bold text-slate-800 dark:text-white">Welcome to M&E-GPT</h1>
+                    <h1 className="text-3xl font-bold text-slate-800 dark:text-white">Welcome to SmartFM-GPT</h1>
                     <p className="mt-2 text-slate-500 dark:text-slate-400">Please sign in to continue</p>
                 </div>
                 <form className="space-y-6" onSubmit={handleSubmit}>
@@ -82,8 +82,8 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                 </form>
                 <div className="mt-6 p-4 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-500 dark:text-slate-400">
                     <h4 className="font-semibold text-center mb-2 text-slate-600 dark:text-slate-300">Test Credentials</h4>
-                    <p><strong className="font-medium">User 1:</strong> User1 / User1@megpt</p>
-                    <p><strong className="font-medium">User 2:</strong> User2 / User2@megpt</p>
+                    <p><strong className="font-medium">User 1:</strong> User1 / User1@smartfmgpt</p>
+                    <p><strong className="font-medium">User 2:</strong> User2 / User2@smartfmgpt</p>
                 </div>
             </div>
         </div>

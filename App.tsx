@@ -154,14 +154,18 @@ const App: React.FC = () => {
     }
   };
 
-  const handleSavePrompt = (title: string, description: string) => {
+  const handleSavePrompt = (title: string, description: string, isPublic: boolean = false) => {
     if (!currentUser) return;
     const generateId = (prefix: string) => `${prefix}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    saveCustomPrompt(currentUser.uid, {
+    saveCustomPrompt({
       id: generateId('prompt'),
       title,
       description,
       author: currentUser.displayName || currentUser.email || 'You',
+      userId: currentUser.uid,
+      isPublic,
+      favoritesCount: 0,
+      favoritedBy: [],
     });
     addToast('Prompt saved successfully!');
   };
@@ -220,6 +224,8 @@ const App: React.FC = () => {
               isLoading={isLoading} 
               customPrompts={customPrompts}
               onSavePrompt={handleSavePrompt}
+              onToggleFavorite={(prompt: Prompt) => toggleFavoritePrompt(currentUser.uid, prompt)}
+              currentUserId={currentUser.uid}
             />
           )}
         </div>

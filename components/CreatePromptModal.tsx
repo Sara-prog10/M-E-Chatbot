@@ -5,20 +5,22 @@ import { XIcon } from './icons/XIcon';
 interface CreatePromptModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (title: string, description: string) => void;
+  onSave: (title: string, description: string, isPublic: boolean) => void;
 }
 
 export const CreatePromptModal: React.FC<CreatePromptModalProps> = ({ isOpen, onClose, onSave }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [isPublic, setIsPublic] = useState(false);
 
   if (!isOpen) return null;
 
   const handleSave = () => {
     if (title.trim() && description.trim()) {
-      onSave(title, description);
+      onSave(title, description, isPublic);
       setTitle('');
       setDescription('');
+      setIsPublic(false);
       onClose();
     }
   };
@@ -54,6 +56,19 @@ export const CreatePromptModal: React.FC<CreatePromptModalProps> = ({ isOpen, on
                   className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" 
                   placeholder="Enter the full prompt you want to save..."
                 />
+            </div>
+            
+            <div className="flex items-center mt-4">
+              <input 
+                id="prompt-visibility" 
+                type="checkbox" 
+                checked={isPublic}
+                onChange={e => setIsPublic(e.target.checked)}
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              />
+              <label htmlFor="prompt-visibility" className="ml-2 block text-sm text-gray-900 dark:text-gray-300">
+                Make this prompt public (anyone can use it)
+              </label>
             </div>
         </div>
         <div className="p-4 bg-gray-50 dark:bg-gray-900 border-t dark:border-gray-700 flex justify-end space-x-2">

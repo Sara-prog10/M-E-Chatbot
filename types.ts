@@ -31,6 +31,10 @@ export interface Prompt {
   description: string;
   author: string;
   tag?: string;
+  isPublic?: boolean;
+  favoritesCount?: number;
+  favoritedBy?: string[];
+  userId?: string;
 }
 
 export enum ChatMode {

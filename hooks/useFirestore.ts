@@ -7,7 +7,8 @@ import {
   onSnapshot, 
   doc, 
   setDoc, 
-  deleteDoc 
+  deleteDoc,
+  or
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import type { ChatSession, Prompt } from '../types';
@@ -34,9 +35,14 @@ export const useFirestore = (userId: string | undefined) => {
       console.error("Error fetching sessions:", error);
     });
 
-    // Subscribe to custom prompts
-    const promptsRef = collection(db, 'users', userId, 'prompts');
-    const unsubscribePrompts = onSnapshot(promptsRef, (snapshot) => {
+    // Subscribe to custom prompts (fetch public OR authored by user)
+    const promptsRef = collection(db, 'prompts');
+    const promptsQuery = query(
+      promptsRef,
+      or(where('userId', '==', userId), where('isPublic', '==', true))
+    );
+
+    const unsubscribePrompts = onSnapshot(promptsQuery, (snapshot) => {
       const prompts = snapshot.docs.map(doc => doc.data() as Prompt);
       setCustomPrompts(prompts);
     }, (error) => {
@@ -58,9 +64,10 @@ export const useFirestore = (userId: string | undefined) => {
     }
   };
 
-  const saveCustomPrompt = async (userId: string, prompt: Prompt) => {
+  const saveCustomPrompt = async (prompt: Prompt) => {
     try {
-      const docRef = doc(db, 'users', userId, 'prompts', prompt.id);
+      // Save root level rather than nested under user to allow sharing
+      const docRef = doc(db, 'prompts', prompt.id);
       await setDoc(docRef, prompt);
     } catch (error) {
       console.error("Error saving custom prompt:", error);
@@ -76,5 +83,30 @@ export const useFirestore = (userId: string | undefined) => {
     }
   };
 
-  return { chatSessions, customPrompts, saveChatSession, saveCustomPrompt, deleteChatSession, setChatSessions };
+  const toggleFavoritePrompt = async (userId: string, prompt: Prompt) => {
+    try {
+      const favoritedBy = prompt.favoritedBy || [];
+      const hasFavorited = favoritedBy.includes(userId);
+      let newFavoritedBy: string[];
+      let newFavoritesCount = prompt.favoritesCount || 0;
+
+      if (hasFavorited) {
+        newFavoritedBy = favoritedBy.filter(id => id !== userId);
+        newFavoritesCount = Math.max(0, newFavoritesCount - 1);
+      } else {
+        newFavoritedBy = [...favoritedBy, userId];
+        newFavoritesCount++;
+      }
+
+      await saveCustomPrompt({
+        ...prompt,
+        favoritedBy: newFavoritedBy,
+        favoritesCount: newFavoritesCount
+      });
+    } catch (error) {
+      console.error("Error toggling favorite on prompt:", error);
+    }
+  };
+
+  return { chatSessions, customPrompts, saveChatSession, saveCustomPrompt, deleteChatSession, toggleFavoritePrompt, setChatSessions };
 };

@@ -1,0 +1,6 @@
+{
+  "name": "M&E GPT",
+  "description": "A responsive single-page React application that connects to a backend via REST webhooks for chat and document analysis, featuring prompt management, file uploads, and a conversational UI.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}

@@ -16,6 +16,7 @@ import { sendMessage as apiSendMessage } from './services/api';
 import { USER_ID } from './constants';
 import { AuthPage } from './components/AuthPage';
 import { useFirestore } from './hooks/useFirestore';
+import { AdminPortal } from './components/AdminPortal';
 
 const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -25,11 +26,12 @@ const App: React.FC = () => {
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [toasts, setToasts] = useState<ToastType[]>([]);
+  const [currentView, setCurrentView] = useState<'app' | 'admin'>('app');
   
   // Theme state
   const [theme, setTheme] = useLocalStorage<'light' | 'dark'>('theme', 'light');
 
-  const { chatSessions, customPrompts, saveChatSession, saveCustomPrompt, deleteChatSession, setChatSessions } = useFirestore(currentUser?.uid);
+  const { chatSessions, customPrompts, saveChatSession, saveCustomPrompt, deleteChatSession, toggleFavoritePrompt, setChatSessions, isAdmin } = useFirestore(currentUser?.uid);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -203,7 +205,14 @@ const App: React.FC = () => {
         theme={theme}
         currentUser={currentUser}
         onSignOut={() => signOut(auth)}
+        isAdmin={isAdmin}
+        onOpenAdmin={() => setCurrentView('admin')}
+        onOpenApp={() => setCurrentView('app')}
+        currentView={currentView}
       />
+      {currentView === 'admin' ? (
+        <AdminPortal currentUser={currentUser} onClose={() => setCurrentView('app')} />
+      ) : (
       <main className="flex-1 flex flex-col transition-all duration-300 min-w-0">
         <header className="flex items-center justify-between p-2 md:hidden bg-white dark:bg-gray-800 border-b dark:border-gray-700 flex-shrink-0">
           <button onClick={() => setSidebarOpen(true)} className="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300">
@@ -230,6 +239,7 @@ const App: React.FC = () => {
           )}
         </div>
       </main>
+      )}
       <div className="fixed top-4 right-4 z-50 flex flex-col gap-2">
         {toasts.map(toast => (
           <Toast key={toast.id} message={toast.message} type={toast.type} onClose={() => setToasts(current => current.filter(t => t.id !== toast.id))} />

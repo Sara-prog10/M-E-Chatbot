@@ -7,8 +7,12 @@ import {
   onSnapshot, 
   doc, 
   setDoc, 
+  updateDoc,
   deleteDoc,
-  or
+  or,
+  arrayUnion,
+  arrayRemove,
+  increment
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import type { ChatSession, Prompt } from '../types';
@@ -16,13 +20,23 @@ import type { ChatSession, Prompt } from '../types';
 export const useFirestore = (userId: string | undefined) => {
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
   const [customPrompts, setCustomPrompts] = useState<Prompt[]>([]);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     if (!userId) {
       setChatSessions([]);
       setCustomPrompts([]);
+      setIsAdmin(false);
       return;
     }
+
+    // Check admin status
+    const adminRef = doc(db, 'admins', userId);
+    const unsubscribeAdmin = onSnapshot(adminRef, (doc) => {
+      setIsAdmin(doc.exists() && doc.data()?.role === 'admin');
+    }, (error) => {
+      console.error("Error fetching admin status:\n", error.message || error);
+    });
 
     // Subscribe to chat sessions
     const sessionsRef = collection(db, 'users', userId, 'chatSessions');
@@ -46,12 +60,13 @@ export const useFirestore = (userId: string | undefined) => {
       const prompts = snapshot.docs.map(doc => doc.data() as Prompt);
       setCustomPrompts(prompts);
     }, (error) => {
-      console.error("Error fetching prompts:", error);
+      console.error("Error fetching prompts:\n", error.message || error);
     });
 
     return () => {
       unsubscribeSessions();
       unsubscribePrompts();
+      unsubscribeAdmin();
     };
   }, [userId]);
 
@@ -85,28 +100,25 @@ export const useFirestore = (userId: string | undefined) => {
 
   const toggleFavoritePrompt = async (userId: string, prompt: Prompt) => {
     try {
+      const docRef = doc(db, 'prompts', prompt.id);
       const favoritedBy = prompt.favoritedBy || [];
       const hasFavorited = favoritedBy.includes(userId);
-      let newFavoritedBy: string[];
-      let newFavoritesCount = prompt.favoritesCount || 0;
 
       if (hasFavorited) {
-        newFavoritedBy = favoritedBy.filter(id => id !== userId);
-        newFavoritesCount = Math.max(0, newFavoritesCount - 1);
+        await updateDoc(docRef, {
+          favoritedBy: arrayRemove(userId),
+          favoritesCount: increment(-1)
+        });
       } else {
-        newFavoritedBy = [...favoritedBy, userId];
-        newFavoritesCount++;
+        await updateDoc(docRef, {
+          favoritedBy: arrayUnion(userId),
+          favoritesCount: increment(1)
+        });
       }
-
-      await saveCustomPrompt({
-        ...prompt,
-        favoritedBy: newFavoritedBy,
-        favoritesCount: newFavoritesCount
-      });
     } catch (error) {
       console.error("Error toggling favorite on prompt:", error);
     }
   };
 
-  return { chatSessions, customPrompts, saveChatSession, saveCustomPrompt, deleteChatSession, toggleFavoritePrompt, setChatSessions };
+  return { chatSessions, customPrompts, saveChatSession, saveCustomPrompt, deleteChatSession, toggleFavoritePrompt, setChatSessions, isAdmin };
 };

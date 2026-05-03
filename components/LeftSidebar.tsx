@@ -20,6 +20,10 @@ interface LeftSidebarProps {
   theme?: 'light' | 'dark';
   currentUser?: User;
   onSignOut?: () => void;
+  isAdmin?: boolean;
+  onOpenAdmin?: () => void;
+  onOpenApp?: () => void;
+  currentView?: 'app' | 'admin';
 }
 
 export const LeftSidebar: React.FC<LeftSidebarProps> = ({
@@ -33,7 +37,11 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
   toggleTheme,
   theme,
   currentUser,
-  onSignOut
+  onSignOut,
+  isAdmin,
+  onOpenAdmin,
+  onOpenApp,
+  currentView
 }) => {
   return (
     <>
@@ -103,23 +111,34 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
           </ul>
         </div>
 
-        <div className="p-4 border-t dark:border-gray-700 flex gap-2 justify-between items-center bg-white dark:bg-gray-800">
-            <div className="flex items-center gap-3 overflow-hidden flex-1">
-                <img className="h-9 w-9 rounded-full bg-gray-200 flex-shrink-0" src={`https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser?.displayName || currentUser?.email || 'User')}&background=random`} alt="User Avatar" />
-                <div className="overflow-hidden flex-1 min-w-0">
-                    <p className="font-semibold text-sm truncate">{currentUser?.displayName || 'User'}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{currentUser?.email}</p>
-                </div>
-            </div>
-            {onSignOut && (
-              <button 
-                onClick={onSignOut}
-                className="text-xs text-red-500 hover:text-red-700 dark:text-red-400 font-medium px-2 py-1 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex-shrink-0"
-                title="Sign out"
+        <div className="p-4 border-t dark:border-gray-700 flex flex-col gap-3 bg-white dark:bg-gray-800">
+            {isAdmin && (
+              <button
+                onClick={currentView === 'admin' ? onOpenApp : onOpenAdmin}
+                className="w-full flex items-center justify-center p-2 rounded-lg bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-semibold text-sm hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
               >
-                Logout
+                {currentView === 'admin' ? 'Exit Admin Portal' : 'Admin Portal'}
               </button>
             )}
+            
+            <div className="flex gap-2 justify-between items-center w-full">
+              <div className="flex items-center gap-3 overflow-hidden flex-1">
+                  <img className="h-9 w-9 rounded-full bg-gray-200 flex-shrink-0" src={`https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser?.displayName || currentUser?.email || 'User')}&background=random`} alt="User Avatar" />
+                  <div className="overflow-hidden flex-1 min-w-0">
+                      <p className="font-semibold text-sm truncate">{currentUser?.displayName || 'User'}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{currentUser?.email}</p>
+                  </div>
+              </div>
+              {onSignOut && (
+                <button 
+                  onClick={onSignOut}
+                  className="text-xs text-red-500 hover:text-red-700 dark:text-red-400 font-medium px-2 py-1 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex-shrink-0"
+                  title="Sign out"
+                >
+                  Logout
+                </button>
+              )}
+            </div>
         </div>
       </aside>
     </>

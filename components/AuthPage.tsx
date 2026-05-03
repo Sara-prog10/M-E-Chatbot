@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import { 
   signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword,
-  updateProfile,
   sendPasswordResetEmail
 } from 'firebase/auth';
 import { auth } from '../firebase';
@@ -13,11 +11,10 @@ interface AuthPageProps {
 }
 
 export const AuthPage: React.FC<AuthPageProps> = ({ onSuccess }) => {
-  const [isLogin, setIsLogin] = useState(true);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [loginRole, setLoginRole] = useState<'user' | 'admin'>('user');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -33,19 +30,12 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onSuccess }) => {
         await sendPasswordResetEmail(auth, email);
         setMessage('Password reset email sent! Check your inbox.');
         setIsResettingPassword(false);
-        setIsLogin(true);
-      } else if (isLogin) {
-        await signInWithEmailAndPassword(auth, email, password);
-        onSuccess();
       } else {
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        await updateProfile(userCredential.user, {
-          displayName: name || email.split('@')[0],
-        });
+        await signInWithEmailAndPassword(auth, email, password);
         onSuccess();
       }
     } catch (err: any) {
-      setError(err.message || 'An error occurred during authentication.');
+      setError(err.message || 'An error occurred.');
     } finally {
       setIsLoading(false);
     }
@@ -57,19 +47,12 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onSuccess }) => {
     setMessage('');
   };
 
-  const toggleAuthMode = () => {
-    setIsLogin(!isLogin);
-    setIsResettingPassword(false);
-    setError('');
-    setMessage('');
-  };
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8 bg-white dark:bg-gray-800 p-8 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
-            {isResettingPassword ? 'Reset your password' : isLogin ? 'Sign in to your account' : 'Create an account'}
+            {isResettingPassword ? 'Reset your password' : `Sign in as ${loginRole === 'admin' ? 'Admin' : 'User'}`}
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
             {isResettingPassword ? (
@@ -82,19 +65,39 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onSuccess }) => {
                   Sign in
                 </button>
               </>
-            ) : (
-              <>
-                Or{' '}
-                <button
-                  onClick={toggleAuthMode}
-                  className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
-                >
-                  {isLogin ? 'create a new account' : 'sign in instead'}
-                </button>
-              </>
-            )}
+            ) : null}
           </p>
         </div>
+        
+        {!isResettingPassword && (
+          <div className="flex justify-center mb-6">
+            <div className="inline-flex rounded-md shadow-sm" role="group">
+              <button
+                type="button"
+                onClick={() => setLoginRole('user')}
+                className={`px-4 py-2 text-sm font-medium rounded-l-lg border ${
+                  loginRole === 'user'
+                    ? 'bg-blue-600 text-white border-blue-600'
+                    : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700 dark:hover:bg-gray-700'
+                }`}
+              >
+                User Login
+              </button>
+              <button
+                type="button"
+                onClick={() => setLoginRole('admin')}
+                className={`px-4 py-2 text-sm font-medium rounded-r-lg border-t border-b border-r ${
+                  loginRole === 'admin'
+                    ? 'bg-blue-600 text-white border-blue-600'
+                    : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700 dark:hover:bg-gray-700'
+                }`}
+              >
+                 Admin Login
+              </button>
+            </div>
+          </div>
+        )}
+
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {error && (
             <div className="bg-red-50 dark:bg-red-900/30 text-red-500 dark:text-red-400 p-3 rounded-md text-sm text-center border border-red-200 dark:border-red-800">
@@ -107,21 +110,6 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onSuccess }) => {
             </div>
           )}
           <div className="rounded-md shadow-sm space-y-4">
-            {!isLogin && !isResettingPassword && (
-              <div>
-                <label htmlFor="name" className="sr-only">Name</label>
-                <input
-                  id="name"
-                  name="name"
-                  type="text"
-                  required
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 text-gray-900 dark:text-white bg-white dark:bg-gray-700 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                  placeholder="Full Name"
-                />
-              </div>
-            )}
             <div>
               <label htmlFor="email-address" className="sr-only">Email address</label>
               <input
@@ -143,7 +131,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onSuccess }) => {
                   id="password"
                   name="password"
                   type="password"
-                  autoComplete={isLogin ? "current-password" : "new-password"}
+                  autoComplete="current-password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -154,7 +142,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onSuccess }) => {
             )}
           </div>
 
-          {!isResettingPassword && isLogin && (
+          {!isResettingPassword && (
             <div className="flex items-center justify-end">
               <div className="text-sm">
                 <button
@@ -174,11 +162,18 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onSuccess }) => {
               disabled={isLoading || (!email && isResettingPassword)}
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-400 disabled:cursor-not-allowed transition-colors"
             >
-              {isLoading ? 'Processing...' : isResettingPassword ? 'Send reset link' : isLogin ? 'Sign in' : 'Sign up'}
+              {isLoading ? 'Processing...' : isResettingPassword ? 'Send reset link' : 'Sign in'}
             </button>
           </div>
+          
+          {!isResettingPassword && (
+            <div className="mt-4 text-center text-xs text-gray-500">
+              <p>Contact administrator to create a new account.</p>
+            </div>
+          )}
         </form>
       </div>
     </div>
   );
 };
+

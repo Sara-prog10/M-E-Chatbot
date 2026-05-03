@@ -11,11 +11,21 @@ interface PromptCardProps {
 }
 
 export const PromptCard: React.FC<PromptCardProps> = ({ prompt, onClick, onToggleFavorite, isFavorite }) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onClick();
+    }
+  };
+
   return (
-    <button
+    <div
       onClick={onClick}
+      onKeyDown={handleKeyDown}
+      role="button"
+      tabIndex={0}
       aria-label={`Select prompt: ${prompt.title}`}
-      className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm hover:shadow-lg transition-shadow duration-300 text-left w-full h-full flex flex-col border border-gray-200 dark:border-gray-700 relative"
+      className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm hover:shadow-lg transition-shadow duration-300 text-left w-full h-full flex flex-col border border-gray-200 dark:border-gray-700 relative cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500"
     >
       <div className="flex-grow">
         <div className="flex justify-between items-start">
@@ -54,6 +64,6 @@ export const PromptCard: React.FC<PromptCardProps> = ({ prompt, onClick, onToggl
           </div>
         )}
       </div>
-    </button>
+    </div>
   );
 };

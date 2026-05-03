@@ -1,0 +1,32 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Secure user subcollections
+    match /users/{userId}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // 2. Secure global prompts
+    match /prompts/{promptId} {
+      // Anyone logged in can read if they own it or it is public
+      allow read: if request.auth != null && (resource == null || resource.data.userId == request.auth.uid || resource.data.isPublic == true);
+      
+      // Users can fully create and delete their own prompts
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+      allow delete: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow update: if request.auth != null 
+                    && (
+                      // Either they own the prompt and can edit it
+                      request.auth.uid == resource.data.userId 
+                      // Or they are just clicking the Favorite button (we only allow them to update favoritedBy and favoritesCount)
+                      || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['favoritedBy', 'favoritesCount'])
+                    );
+    }
+    
+    // 3. Secure admins collection
+    match /admins/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}

@@ -50,7 +50,13 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onSuccess }) => {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8 bg-white dark:bg-gray-800 p-8 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
         <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
+          <h1 className="text-center text-4xl font-extrabold text-blue-600 dark:text-blue-400 mb-1">
+            M&E GPT
+          </h1>
+          <p className="text-center text-xs text-gray-500 dark:text-gray-400 mb-6 uppercase tracking-widest font-semibold">
+            Powered by the Intellect
+          </p>
+          <h2 className="text-center text-2xl font-bold text-gray-900 dark:text-white">
             {isResettingPassword ? 'Reset your password' : 'Sign in to your account'}
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">

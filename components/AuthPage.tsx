@@ -12,7 +12,6 @@ interface AuthPageProps {
 
 export const AuthPage: React.FC<AuthPageProps> = ({ onSuccess }) => {
   const [isResettingPassword, setIsResettingPassword] = useState(false);
-  const [loginRole, setLoginRole] = useState<'user' | 'admin'>('user');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -52,7 +51,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onSuccess }) => {
       <div className="max-w-md w-full space-y-8 bg-white dark:bg-gray-800 p-8 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
-            {isResettingPassword ? 'Reset your password' : `Sign in as ${loginRole === 'admin' ? 'Admin' : 'User'}`}
+            {isResettingPassword ? 'Reset your password' : 'Sign in to your account'}
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
             {isResettingPassword ? (
@@ -69,35 +68,6 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onSuccess }) => {
           </p>
         </div>
         
-        {!isResettingPassword && (
-          <div className="flex justify-center mb-6">
-            <div className="inline-flex rounded-md shadow-sm" role="group">
-              <button
-                type="button"
-                onClick={() => setLoginRole('user')}
-                className={`px-4 py-2 text-sm font-medium rounded-l-lg border ${
-                  loginRole === 'user'
-                    ? 'bg-blue-600 text-white border-blue-600'
-                    : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700 dark:hover:bg-gray-700'
-                }`}
-              >
-                User Login
-              </button>
-              <button
-                type="button"
-                onClick={() => setLoginRole('admin')}
-                className={`px-4 py-2 text-sm font-medium rounded-r-lg border-t border-b border-r ${
-                  loginRole === 'admin'
-                    ? 'bg-blue-600 text-white border-blue-600'
-                    : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700 dark:hover:bg-gray-700'
-                }`}
-              >
-                 Admin Login
-              </button>
-            </div>
-          </div>
-        )}
-
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {error && (
             <div className="bg-red-50 dark:bg-red-900/30 text-red-500 dark:text-red-400 p-3 rounded-md text-sm text-center border border-red-200 dark:border-red-800">

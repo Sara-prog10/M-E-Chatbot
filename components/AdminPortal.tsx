@@ -9,11 +9,13 @@ interface AdminPortalProps {
 
 export const AdminPortal: React.FC<AdminPortalProps> = ({ currentUser, onClose }) => {
   const [users, setUsers] = useState<any[]>([]);
+  const [currentUserRole, setCurrentUserRole] = useState<string>('admin');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [newEmail, setNewEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [newName, setNewName] = useState('');
+  const [newRole, setNewRole] = useState<string>('user');
 
   const fetchUsers = async () => {
     setIsLoading(true);
@@ -40,6 +42,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ currentUser, onClose }
       }
       const data = await res.json();
       setUsers(data.users || []);
+      setCurrentUserRole(data.currentRole || 'admin');
     } catch (err: any) {
       console.error(err);
       setError(err.message || 'Failed to fetch users');
@@ -65,7 +68,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ currentUser, onClose }
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ email: newEmail, password: newPassword, displayName: newName })
+        body: JSON.stringify({ email: newEmail, password: newPassword, displayName: newName, role: currentUserRole === 'owner' ? newRole : 'user' })
       });
       if (!res.ok) {
         let errMessage = 'Server error occurred.';
@@ -142,9 +145,9 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ currentUser, onClose }
         )}
 
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-8">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Create New User</h2>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Create New Account</h2>
           <form onSubmit={handleCreateUser} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                <div>
                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
                  <input 
@@ -174,20 +177,33 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ currentUser, onClose }
                    className="w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                  />
                </div>
+               {currentUserRole === 'owner' && (
+                 <div>
+                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Role</label>
+                   <select 
+                     value={newRole}
+                     onChange={e => setNewRole(e.target.value)}
+                     className="w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white bg-white"
+                   >
+                     <option value="user">User</option>
+                     <option value="admin">Admin</option>
+                   </select>
+                 </div>
+               )}
             </div>
             <button 
               type="submit" 
               disabled={isLoading}
               className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
             >
-              {isLoading ? 'Processing...' : 'Create User'}
+              {isLoading ? 'Processing...' : 'Create Account'}
             </button>
           </form>
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
           <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Manage Users</h2>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Manage Accounts</h2>
             <button onClick={fetchUsers} disabled={isLoading} className="text-sm text-blue-600 dark:text-blue-400 hover:underline">
               Refresh List
             </button>
@@ -199,6 +215,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ currentUser, onClose }
                 <tr>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Email</th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Display Name</th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Role</th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Last Sign In</th>
                   <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
                 </tr>
@@ -213,13 +230,16 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ currentUser, onClose }
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                       {user.displayName || '-'}
                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 capitalize">
+                      {user.role || 'User'}
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                        {user.metadata?.lastSignInTime ? new Date(user.metadata.lastSignInTime).toLocaleDateString() : 'Never'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <button 
                         onClick={() => handleDeleteUser(user.uid)}
-                        disabled={user.uid === currentUser.uid || isLoading}
+                        disabled={user.uid === currentUser.uid || isLoading || (currentUserRole === 'admin' && user.role !== 'user') || user.role === 'owner'}
                         className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 disabled:opacity-50"
                       >
                         Delete

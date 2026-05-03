@@ -33,7 +33,7 @@ export const useFirestore = (userId: string | undefined) => {
     // Check admin status
     const adminRef = doc(db, 'admins', userId);
     const unsubscribeAdmin = onSnapshot(adminRef, (doc) => {
-      setIsAdmin(doc.exists() && doc.data()?.role === 'admin');
+      setIsAdmin(doc.exists() && (doc.data()?.role === 'admin' || doc.data()?.role === 'owner'));
     }, (error) => {
       console.error("Error fetching admin status:\n", error.message || error);
     });

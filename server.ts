@@ -58,10 +58,11 @@ async function startServer() {
       const adminDoc = await admin.firestore().collection('admins').doc(decodedToken.uid).get();
       
       if (!adminDoc.exists) {
-        return res.status(403).json({ error: 'Forbidden: Not an admin' });
+        return res.status(403).json({ error: 'Forbidden: Not an admin or owner' });
       }
 
       req.user = decodedToken;
+      req.user.role = adminDoc.data().role || 'admin';
       next();
     } catch (error) {
       console.error('Token verification failed:', error);
@@ -69,11 +70,67 @@ async function startServer() {
     }
   };
 
+  // Helper to ensure owner exists
+  const ensureOwnerAccount = async () => {
+    const email = 'owner@mkv.com';
+    const password = 'ownermkv@1212';
+    try {
+      let ownerRecord;
+      try {
+        ownerRecord = await admin.auth().getUserByEmail(email);
+      } catch (e: any) {
+        if (e.code === 'auth/user-not-found') {
+          ownerRecord = await admin.auth().createUser({
+            email,
+            password,
+            displayName: 'System Owner',
+          });
+          console.log('Owner account created.');
+        } else {
+          throw e; // rethrow other errors
+        }
+      }
+      
+      // Ensure role is set
+      if (ownerRecord) {
+        await admin.firestore().collection('admins').doc(ownerRecord.uid).set({ role: 'owner', email }, { merge: true });
+      }
+    } catch (error) {
+       console.error('Failed to ensure owner account:', error);
+    }
+  };
+  
+  // Call it but don't block
+  ensureOwnerAccount();
+
   // Admin Routes
   app.get('/api/admin/users', verifyAdmin, async (req, res) => {
     try {
-      const listUsersResult = await admin.auth().listUsers(100);
-      res.json({ users: listUsersResult.users.map(u => ({ uid: u.uid, email: u.email, displayName: u.displayName, metadata: u.metadata })) });
+      const listUsersResult = await admin.auth().listUsers(1000);
+      const allUsers = listUsersResult.users.map(u => ({ uid: u.uid, email: u.email, displayName: u.displayName, metadata: u.metadata }));
+      
+      // Get all admin/owner roles
+      const adminsSnapshot = await admin.firestore().collection('admins').get();
+      const rolesMap = new Map();
+      adminsSnapshot.forEach((doc: any) => {
+        rolesMap.set(doc.id, doc.data().role || 'admin');
+      });
+
+      const role = (req as any).user.role;
+      let filteredUsers = allUsers;
+      
+      // Combine user info with their roles
+      filteredUsers = filteredUsers.map(u => ({
+         ...u,
+         role: rolesMap.get(u.uid) || 'user'
+      }));
+
+      if (role === 'admin') {
+        // Admins can only see users, not other admins or owners
+        filteredUsers = filteredUsers.filter(u => u.role === 'user');
+      }
+
+      res.json({ users: filteredUsers, currentRole: role });
     } catch (error) {
       console.error('Error listing users:', error);
       res.status(500).json({ error: 'Failed to list users' });
@@ -81,14 +138,28 @@ async function startServer() {
   });
 
   app.post('/api/admin/users', verifyAdmin, async (req, res) => {
-    const { email, password, displayName } = req.body;
+    const { email, password, displayName, role: newRoleTarget } = req.body;
+    const callerRole = (req as any).user.role; // 'owner' or 'admin'
+
+    // Admin can only create users. Owner can create admin and user.
+    const requestedRole = newRoleTarget || 'user';
+    
+    if (callerRole === 'admin' && requestedRole !== 'user') {
+      return res.status(403).json({ error: 'Admins can only create regular users.' });
+    }
+
     try {
       const userRecord = await admin.auth().createUser({
         email,
         password,
         displayName,
       });
-      res.json({ user: { uid: userRecord.uid, email: userRecord.email, displayName: userRecord.displayName } });
+
+      if (requestedRole === 'admin' || requestedRole === 'owner') {
+        await admin.firestore().collection('admins').doc(userRecord.uid).set({ role: requestedRole, email }, { merge: true });
+      }
+
+      res.json({ user: { uid: userRecord.uid, email: userRecord.email, displayName: userRecord.displayName, role: requestedRole } });
     } catch (error: any) {
       console.error('Error creating user:', error);
       res.status(500).json({ error: error.message || 'Failed to create user' });
@@ -97,13 +168,27 @@ async function startServer() {
 
   app.delete('/api/admin/users/:uid', verifyAdmin, async (req, res) => {
     const { uid } = req.params;
+    const callerRole = (req as any).user.role; // 'owner' or 'admin'
+
     try {
-      // Don't let an admin delete themselves to prevent being locked out
       if (uid === (req as any).user.uid) {
-         return res.status(400).json({ error: 'Cannot delete your own admin account.' });
+         return res.status(400).json({ error: 'Cannot delete your own account.' });
+      }
+
+      // Check the role of the user being deleted
+      const targetAdminDoc = await admin.firestore().collection('admins').doc(uid).get();
+      const targetRole = targetAdminDoc.exists ? (targetAdminDoc.data()?.role || 'admin') : 'user';
+
+      if (callerRole === 'admin' && targetRole !== 'user') {
+         return res.status(403).json({ error: 'Admins can only delete regular users.' });
       }
 
       await admin.auth().deleteUser(uid);
+      
+      if (targetRole !== 'user') {
+         await admin.firestore().collection('admins').doc(uid).delete();
+      }
+
       res.json({ success: true });
     } catch (error: any) {
       console.error('Error deleting user:', error);

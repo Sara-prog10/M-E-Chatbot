@@ -26,7 +26,17 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ currentUser, onClose }
         }
       });
       if (!res.ok) {
-        throw new Error(await res.text());
+        let errMessage = 'Server error occurred.';
+        try {
+          const contentType = res.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            const errData = await res.json();
+            errMessage = errData.error || errMessage;
+          } else {
+            errMessage = "Admin API not found. If you exported this app to static hosting (like Netlify), Admin features will not work because they require a Node.js server to run the backend API.";
+          }
+        } catch(e) {}
+        throw new Error(errMessage);
       }
       const data = await res.json();
       setUsers(data.users || []);
@@ -58,7 +68,17 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ currentUser, onClose }
         body: JSON.stringify({ email: newEmail, password: newPassword, displayName: newName })
       });
       if (!res.ok) {
-        throw new Error(await res.text());
+        let errMessage = 'Server error occurred.';
+        try {
+          const contentType = res.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            const errData = await res.json();
+            errMessage = errData.error || errMessage;
+          } else {
+            errMessage = "Admin API not found. If you exported this app to static hosting, Admin features will not work because they require a Node.js backend.";
+          }
+        } catch(e) {}
+        throw new Error(errMessage);
       }
       setNewEmail('');
       setNewPassword('');
@@ -83,7 +103,17 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ currentUser, onClose }
         }
       });
       if (!res.ok) {
-        throw new Error(await res.text());
+        let errMessage = 'Server error occurred.';
+        try {
+          const contentType = res.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            const errData = await res.json();
+            errMessage = errData.error || errMessage;
+          } else {
+            errMessage = "Admin API not found. If you exported this app to static hosting, Admin features will not work because they require a Node.js backend.";
+          }
+        } catch(e) {}
+        throw new Error(errMessage);
       }
       fetchUsers();
     } catch (err: any) {
